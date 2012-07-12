@@ -153,7 +153,7 @@ inline cell_ptr evlist(cell_ptr l, env_ptr e)
         if ( l->car()->is_pair() && l->car()->car()->is_effect() )
         {
             //std::cout << "effect this: " << l->car() << "\n";
-            cell_ptr a = evlist(l->car()->cdr(),e);
+            cell_ptr a = evlist(l->car()->cdr(),l->car()->car()->get_env());
             evx.add(l->car()->car(),a,sto);
         }
         else
@@ -321,10 +321,10 @@ inline cell_ptr eval(cell_ptr exp, env_ptr e)
         {
             assure(exp->cadr()->is_symbol(), "Not a symbol");
             std::string s = exp->cadr()->get_symbol();
-            assure( !e->has(s), s + "already defined in this environment");
+            assure( !e->has(s), s + " already defined in this environment");
             cell_ptr c = eval(exp->cddr()->car(), e);
             e->set(s, c);
-            return c;
+            return cell_t::make_undefined();
         }
 
         if ( s == "lambda" )
@@ -345,7 +345,7 @@ inline cell_ptr eval(cell_ptr exp, env_ptr e)
 
     if ( exp->car()->is_effect() )
     {
-        exp->car()->get_effect()->process_fx(evlist(exp->cdr(), e));
+        exp->car()->get_effect()->process_fx(evlist(exp->cdr(), exp->car()->get_env()));
         return cell_t::make_image(exp->car()->get_effect());
     }
 

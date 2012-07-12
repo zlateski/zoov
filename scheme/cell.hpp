@@ -487,7 +487,8 @@ public:
 
     env_ptr get_env() const
     {
-        assure(is_promise() || is_compound() || is_infile(), "Not a compound or infile procedure");
+        assure(is_effect() || is_promise() ||
+               is_compound() || is_infile(), "Not a compound or infile procedure");
         return env_;
     }
 
