@@ -22,6 +22,12 @@ inline void* vlc_on_lock(void *what, void** planes);
 inline void  vlc_on_unlock(void *what, void *picture, void *const *planes);
 inline void  vlc_on_display(void *what, void *picture);
 
+inline void  vlc_on_audio_play(void* what, const void* samples, unsigned count, int64_t pts);
+inline void  vlc_on_audio_pause(void* what, int64_t pts);
+inline void  vlc_on_audio_resume(void* what, int64_t pts);
+inline void  vlc_on_audio_flush(void* what, int64_t pts);
+inline void  vlc_on_audio_drain(void* what);
+
 } // namespace detail
 
 class EFFECT(video, STATIC(std::string))
@@ -116,6 +122,12 @@ public:
         cv_.notify_all();
     }
 
+    void on_audio_play(const void* samples, unsigned count, int64_t pts) {}
+    void on_audio_pause(int64_t pts) {}
+    void on_audio_resume(int64_t pts) {}
+    void on_audio_flush(int64_t pts) {}
+    void on_audio_drain() {}
+
 
     image_ptr process()
     {
@@ -151,6 +163,34 @@ inline void vlc_on_display(void *what, void *picture)
 {
     reinterpret_cast<video*>(what)->on_display(picture);
 }
+
+
+inline void vlc_on_audio_play(void* what, const void* samples, unsigned count, int64_t pts)
+{
+    reinterpret_cast<video*>(what)->on_audio_play(samples, count, pts);
+}
+
+inline void vlc_on_audio_pause(void* what, int64_t pts)
+{
+    reinterpret_cast<video*>(what)->on_audio_pause(pts);
+}
+
+inline void vlc_on_audio_resume(void* what, int64_t pts)
+{
+    reinterpret_cast<video*>(what)->on_audio_resume(pts);
+}
+
+inline void vlc_on_audio_flush(void* what, int64_t pts);
+{
+    reinterpret_cast<video*>(what)->on_audio_flush(pts);
+}
+
+inline void vlc_on_audio_drain(void* what)
+{
+    reinterpret_cast<video*>(what)->on_audio_drain();
+}
+
+
 
 } // namespace detail
 
