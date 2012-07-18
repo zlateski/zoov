@@ -1,0 +1,2 @@
+(define (effectof i v) (trail (mask i (canny (smooth (grayscale v) 15 15) 0.1 0.7 7)) 0.9 ))
+(fps_counter (let ((i (pic "1.jpg")) (v (video "1.avi"))) (effectof i v)))

@@ -319,12 +319,24 @@ inline cell_ptr eval(cell_ptr exp, env_ptr e)
 
         if ( s == "define" )
         {
-            assure(exp->cadr()->is_symbol(), "Not a symbol");
-            std::string s = exp->cadr()->get_symbol();
-            assure( !e->has(s), s + " already defined in this environment");
-            cell_ptr c = eval(exp->cddr()->car(), e);
-            e->set(s, c);
-            return cell_t::make_undefined();
+            if ( exp->cadr()->is_symbol() )
+            {
+                std::string s = exp->cadr()->get_symbol();
+                assure( !e->has(s), s + " already defined in this environment");
+                cell_ptr c = eval(exp->cddr()->car(), e);
+                e->set(s, c);
+                return cell_t::make_undefined();
+            }
+            else
+            {
+                // syntactic sugar for defining lambdas
+                assure(exp->cadr()->car()->is_symbol(), "Not a symbol");
+                std::string s = exp->cadr()->car()->get_symbol();
+                cell_ptr args = exp->cadr()->cdr();
+                cell_ptr body = exp->cddr();
+                e->set(s, cell_t::make_compound(args, body, e));
+                return cell_t::make_undefined();
+            }
         }
 
         if ( s == "lambda" )

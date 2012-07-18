@@ -33,6 +33,10 @@
 #include <zi/timer.hpp>
 #include <SDL/SDL_ttf.h>
 
+#include <zi/logging.hpp>
+
+USE_ZiLOGGING( STDOUT );
+
 class some_effect: public zoov::effect<zoov::static_params<std::string, int>>
 {
 public:
@@ -171,8 +175,10 @@ cell_ptr quit_function(cell_ptr args)
 
 
 
-int main()
+int main(int argc, char **argv)
 {
+
+    zi::parse_arguments( argc, argv, true );
 
     zoov::scheme::register_builtin("quit", &zoov::quit_function);
     zoov::register_fx<some_effect> reg("some");

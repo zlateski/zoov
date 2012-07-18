@@ -12,6 +12,8 @@
 #include <zi/utility/for_each.hpp>
 #include <boost/enable_shared_from_this.hpp>
 
+#include <zi/logging.hpp>
+
 #include "cell.hpp"
 
 namespace zoov {
@@ -42,7 +44,7 @@ private:
 
         void collect(cell_ptr c)
         {
-            std::cout << "Garbage collector of Env #" << root_->env_id_ << " running\n";
+            ZiLOG_INFO() << "Garbage collector of Env #" << root_->env_id_ << " running\n";
 
             ++iter_;
 
@@ -78,7 +80,7 @@ private:
 
         void register_env(env_ptr e)
         {
-            std::cout << "Registered env [ " << envs_.size() << " envs]\n";
+            ZiLOG_INFO() << "Registered env [ " << envs_.size() << " envs]\n";
             envs_.push_back(e);
         }
 
@@ -155,8 +157,8 @@ public:
         , env_id_(nenv++)
     {
         ++nrenv;
-        std::cout << "---> Created Root Env #" << env_id_ << "\n";
-        std::cout << "---> Nenv: " << nenv << ' ' << nrenv << "\n";
+        ZiLOG_INFO() << "---> Created Root Env #" << env_id_ << "\n";
+        ZiLOG_INFO() << "---> Nenv: " << nenv << ' ' << nrenv << "\n";
     }
 
     explicit env_t(env_ptr p)
@@ -168,8 +170,8 @@ public:
         , root_(0)
         , env_id_(nenv++)
     {
-        std::cout << "---> Created Env #" << env_id_ << "\n";
-        std::cout << "---> Nenv: " << nenv << ' ' << nrenv << "\n";
+        ZiLOG_INFO() << "---> Created Env #" << env_id_ << "\n";
+        ZiLOG_INFO() << "---> Nenv: " << nenv << ' ' << nrenv << "\n";
     }
 
     ~env_t()
@@ -178,14 +180,14 @@ public:
         if ( root_ )
         {
             --nrenv;
-            std::cout << "---> Erased Root Env #" << env_id_ << "\n";
+            ZiLOG_INFO() << "---> Erased Root Env #" << env_id_ << "\n";
         }
         else
         {
-            std::cout << "---> Erased Env #" << env_id_ << "\n";
+            ZiLOG_INFO() << "---> Erased Env #" << env_id_ << "\n";
         }
 
-        std::cout << "---> Nenv: " << nenv << ' ' << nrenv << "\n";
+        ZiLOG_INFO() << "---> Nenv: " << nenv << ' ' << nrenv << "\n";
 
         if ( root_ )
         {
@@ -314,7 +316,7 @@ public:
     {
         FOR_EACH( it, map_ )
         {
-            std::cout << it->first << '\n' << '\t'
+            ZiLOG_INFO() << it->first << '\n' << '\t'
                       << it->second << '\n';
         }
     }
@@ -379,7 +381,7 @@ private:
         if ( c && c->copy_ )
         {
             rcopy--;
-            std::cout << "RCP: " << rcopy << '\n';
+            ZiLOG_INFO() << "RCP: " << rcopy << '\n';
 
             cell_ptr cp;
             cp.swap(c->copy_);
@@ -399,7 +401,7 @@ private:
         if ( copy_ )
         {
             rcopy--;
-            std::cout << "RCP: " << rcopy << '\n';
+            ZiLOG_INFO() << "RCP: " << rcopy << '\n';
 
             env_ptr cp;
             cp.swap(copy_);
@@ -425,7 +427,7 @@ private:
         }
 
         rcopy += 2;
-        std::cout << "RCP: " << rcopy << '\n';
+        ZiLOG_INFO() << "RCP: " << rcopy << '\n';
 
         cell_t* c = new cell_t(o->type_);
         c->copy_    = cell_ptr(c);
@@ -463,7 +465,7 @@ private:
         }
 
         rcopy += 2;
-        std::cout << "RCP: " << rcopy << '\n';
+        ZiLOG_INFO() << "RCP: " << rcopy << '\n';
 
         env_t* e = parent_ ? new env_t(parent_->copy()) : new env_t;
         copy_        = env_ptr(e);
