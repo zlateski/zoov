@@ -12,6 +12,7 @@
 #include "fx/video.hpp"
 #include "fx/canny.hpp"
 #include "fx/delay.hpp"
+#include "fx/webcam.hpp"
 #include "fx/mask.hpp"
 #include "fx/fps_counter.hpp"
 
