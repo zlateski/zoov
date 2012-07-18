@@ -8,7 +8,7 @@
 #include <zi/meta/enable_if.hpp>
 #include <zi/utility/singleton.hpp>
 #include <zi/utility/non_copyable.hpp>
-#include <cv.h>
+
 
 
 namespace zoov {

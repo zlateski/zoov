@@ -3,14 +3,16 @@
 
 #include <boost/shared_ptr.hpp>
 #include <zi/concurrency.hpp>
+#include "detail/image_pool.hpp"
 
 #include <cstddef>
 #include <utility>
 #include <iostream>
 #include <atomic>
 
-#include <cv.h>
-#include <highgui.h>
+#include <opencv/cv.h>
+#include <opencv/cv.hpp>
+#include <opencv/highgui.h>
 
 
 namespace zoov {
@@ -22,7 +24,17 @@ ticker_t& ticker = zi::singleton<ticker_t>::instance();
 }
 
 
-typedef IplImage* image_ptr;
+//typedef boost::shared_ptr<cv::Mat> image_ptr;
+typedef boost::shared_ptr<IplImage> image_ptr;
+
+inline void null_deleter(void*)
+{ }
+
+inline image_ptr from_ptr(IplImage* i)
+{
+    return boost::shared_ptr<IplImage>(i,&null_deleter);
+}
+
 
 class fx;
 typedef boost::shared_ptr<fx> fx_ptr;
@@ -60,7 +72,7 @@ public:
 
 public:
     fx()
-        : image_(0)
+        : image_()
         , initialized_(false)
         , m_()
         , tick_()

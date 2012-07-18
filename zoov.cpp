@@ -2,6 +2,7 @@
 
 #include "scheme/scheme.hpp"
 #include "scheme/parse.hpp"
+#include "scheme/detail/image_pool.hpp"
 #include "fx/fx.hpp"
 #include "fx/trail.hpp"
 #include "fx/add.hpp"
@@ -10,6 +11,7 @@
 #include "fx/grayscale.hpp"
 #include "fx/video.hpp"
 #include "fx/canny.hpp"
+#include "fx/delay.hpp"
 #include "fx/mask.hpp"
 #include "fx/fps_counter.hpp"
 
@@ -48,7 +50,7 @@ public:
     {
         //std::cout << "[rpcess\n";
         //std::cout << a << ' ' << b << "\n";
-        return 0;
+        return zoov::image_ptr();
     }
 
     ///    void pr
@@ -61,7 +63,7 @@ struct effect_thread
 private:
     bool         is_running_;
     zi::mutex    m_         ;
-    image_ptr    out_       ;
+    IplImage*    out_       ;
 
 public:
     void stop()
@@ -107,7 +109,7 @@ public:
             {
                 ++zoov::ticker;
                 cell_ptr r = zoov::scheme::evaluate_in_env(p.first,p.second);
-                //p.second->run_gc(p.first);
+                p.second->run_gc(p.first);
 
                 r->get_image()->acquire_write();
                 image_ptr im = r->get_image()->get_image();
@@ -124,10 +126,10 @@ public:
                 switch ( im->nChannels )
                 {
                 case 1:
-                    cvCvtColor( im, out_, CV_GRAY2RGBA );
+                    cvCvtColor( im.get(), out_, CV_GRAY2RGBA );
                     break;
                 case 3:
-                    cvCvtColor( im, out_, CV_RGB2RGBA );
+                    cvCvtColor( im.get(), out_, CV_RGB2RGBA );
                     break;
                 case 4:
                     std::memcpy(screen->pixels, im->imageData,
@@ -147,7 +149,7 @@ public:
 
                 r->get_image()->release_write();
 
-                zoov::scheme::env()->run_gc();
+                //zoov::scheme::env()->run_gc(p.first);
             }
 
             if ( !is_running )
@@ -236,16 +238,18 @@ int main()
                         zoov::effect_thread et1;
                         //zoov::effect_thread et2;
 
-                        //std::pair<zoov::cell_ptr,zoov::env_ptr> p1 =
-                        //zoov::scheme::env()->deep_copy(c);
+                        std::pair<zoov::cell_ptr,zoov::env_ptr> p2 // (c,zoov::scheme::env());
+                                                                   = zoov::scheme::env()->clone(c);
 
-                        //std::pair<zoov::cell_ptr,zoov::env_ptr> p2 =
-                            //zoov::scheme::env()->deep_copy(c);
+                        //c.reset();
+                        //zoov::scheme::env()->run_gc();
+                        p2.second->print();
 
+
+                        //zi::thread t1(zi::bind(&zoov::effect_thread::loop,
+                        //                     &et1, c, zoov::scheme::env(), screen ));
                         zi::thread t1(zi::bind(&zoov::effect_thread::loop,
-                                               &et1, c, zoov::scheme::env(), screen ));
-                        //zi::thread t2(zi::bind(&zoov::effect_thread::loop,
-                        //                     &et2, p2.first, p2.second, screen ));
+                                               &et1, p2.first, p2.second, screen ));
                         t1.start();
                         //t2.start();
 
@@ -273,6 +277,10 @@ int main()
                         //et2.stop();
                         t1.join();
                         //t2.join();
+
+                        //p2.second->clear();
+                        //p2.second->run_gc();
+                        p2.second->print();
 
                         keypress = 0;
                     }

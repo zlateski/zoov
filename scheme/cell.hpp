@@ -69,6 +69,24 @@ private:
     //template <typename> friend class garbage_collector_t;
 
 public:
+    cell_ptr copy()
+    {
+        cell_t* c = new cell_t(type_);
+        c->bool_ = bool_;
+        c->number_ = number_;
+        c->string_ = string_;
+        if ( pair_.first ) c->pair_.first = pair_.first->copy();
+        if ( pair_.second ) c->pair_.second = pair_.second->copy();
+        c->env_ = env_;
+        c->builtin_ = builtin_;
+        c->effect_ = effect_;
+        c->copy_ = copy_;
+        c->visited_ = visited_;
+        return cell_ptr(c);
+    }
+
+
+public:
     cell_t(int t)
         : type_(t)
         , bool_()
@@ -204,7 +222,7 @@ public:
     {
         cell_t* c = new cell_t(effect);
         c->effect_  = f;
-        c->string_ = name;
+        c->string_  = name;
         return cell_ptr(c);
     }
 
@@ -296,6 +314,11 @@ public:
     {
         assure(is_pair(), "Not a pair");
         pair_.first = a;
+    }
+
+    void set_env(env_ptr e)
+    {
+        env_ = e;
     }
 
     void set_cdr(cell_ptr b)

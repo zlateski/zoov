@@ -116,7 +116,7 @@ public:
 
 inline cell_ptr evlet(cell_ptr exp, env_ptr e)
 {
-    env_ptr r = e->bind(e);
+    env_ptr r = e->drop_frame();
 
     //env_garbage_collector.register_env(r);
 
@@ -153,7 +153,7 @@ inline cell_ptr evlist(cell_ptr l, env_ptr e)
         if ( l->car()->is_pair() && l->car()->car()->is_effect() )
         {
             //std::cout << "effect this: " << l->car() << "\n";
-            cell_ptr a = evlist(l->car()->cdr(),l->car()->car()->get_env());
+            cell_ptr a = evlist(l->car()->cdr(),e); //l->car()->car()->get_env());
             evx.add(l->car()->car(),a,sto);
         }
         else
@@ -240,7 +240,7 @@ inline cell_ptr eval(cell_ptr exp, env_ptr e)
     {
         try
         {
-            return lookup(e, exp->get_symbol());
+            return e->lookup(exp->get_symbol());
         }
         catch ( scheme_exception& ecp )
         {
@@ -269,7 +269,7 @@ inline cell_ptr eval(cell_ptr exp, env_ptr e)
 
         std::string s = exp->car()->get_symbol();
 
-        if ( s == "delay" )
+        if ( s == "promise" )
         {
             assure(exp->cddr()->is_nil(), "Syntax error");
             return cell_t::make_promise(exp->cadr(), e);
@@ -336,7 +336,7 @@ inline cell_ptr eval(cell_ptr exp, env_ptr e)
         {
             assure( exp->cadr()->is_symbol(), "Not a symbol");
             assure( exp->cddr()->cdr()->is_nil(), "Too many arguments");
-            std::pair<cell_ptr, env_ptr> p = lookup_env(e, exp->cadr()->get_symbol() );
+            std::pair<cell_ptr, env_ptr> p = e->lookup_env(exp->cadr()->get_symbol() );
             cell_ptr r = eval(exp->cddr()->car(), e);
             p.second->set( exp->cadr()->get_symbol(), r);
             return p.first;
@@ -345,7 +345,7 @@ inline cell_ptr eval(cell_ptr exp, env_ptr e)
 
     if ( exp->car()->is_effect() )
     {
-        exp->car()->get_effect()->process_fx(evlist(exp->cdr(), exp->car()->get_env()));
+        exp->car()->get_effect()->process_fx(evlist(exp->cdr(), e));//exp->car()->get_env()));
         return cell_t::make_image(exp->car()->get_effect());
     }
 
@@ -357,6 +357,7 @@ inline cell_ptr eval(cell_ptr exp, env_ptr e)
         f->get_creator()(r);
 
         exp->set_car(r->car());
+        //r->car()->set_env(e);
 
         for ( std::size_t i = r->car()->get_effect()->init_len(); i > 0; --i )
         {
@@ -391,7 +392,7 @@ inline cell_ptr apply(cell_ptr f, cell_ptr args)
 {
     if ( f->is_compound() )
     {
-        return evalall(f->get_body(),f->get_env()->bind(f->get_args(), args, f->get_env()));
+        return evalall(f->get_body(),f->get_env()->drop_frame(f->get_args(), args));
     }
 
     if ( f->is_builtin() )
@@ -403,7 +404,7 @@ inline cell_ptr apply(cell_ptr f, cell_ptr args)
 
     if ( f->is_infile() )
     {
-        return evalall(f->get_body(),f->get_env()->bind(args, f->get_env()));
+        return evalall(f->get_body(),f->get_env()->drop_frame(args));
     }
 
     return cell_t::make_undefined();

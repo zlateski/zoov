@@ -6,7 +6,6 @@
 #include <zi/concurrency.hpp>
 
 #include <vlc/vlc.h>
-#include <cv.h>
 
 #include <algorithm>
 #include <utility>
@@ -52,9 +51,9 @@ public:
         int width = 800;
         int height = 600;
 
-        current_ = cvCreateImage( cvSize(width, height), IPL_DEPTH_8U, 4 );
-        buffer_  = cvCreateImage( cvSize(width, height), IPL_DEPTH_8U, 4 );
-        result_  = cvCreateImage( cvSize(width, height), IPL_DEPTH_8U, 4 );
+        current_ = image_pool::get(width,height,IPL_DEPTH_8U,4);
+        buffer_  = image_pool::get(width,height,IPL_DEPTH_8U,4);
+        result_  = image_pool::get(width,height,IPL_DEPTH_8U,4);
         vlc_instance_ = libvlc_new(0,0);
 
         vlc_media_ = libvlc_media_new_path(vlc_instance_, filename.c_str());
@@ -65,6 +64,12 @@ public:
 
         libvlc_video_set_callbacks(vlc_mp_, detail::vlc_on_lock,
                                    detail::vlc_on_unlock, detail::vlc_on_display, this);
+
+        // libvlc_audio_set_callbacks(vlc_mp_,
+        //                            detail::vlc_on_audio_play,
+        //                            detail::vlc_on_audio_pause, detail::vlc_on_audio_resume,
+        //                            detail::vlc_on_audio_flush, detail::vlc_on_audio_drain,
+        //                            this);
 
         libvlc_media_player_play(vlc_mp_);
 
@@ -99,10 +104,6 @@ public:
         libvlc_media_player_stop(vlc_mp_);
         libvlc_media_player_release(vlc_mp_);
         libvlc_release(vlc_instance_);
-
-        cvReleaseImage(&current_);
-        cvReleaseImage(&buffer_);
-        cvReleaseImage(&result_);
     }
 
     void on_lock(void** planes)
@@ -122,11 +123,30 @@ public:
         cv_.notify_all();
     }
 
-    void on_audio_play(const void* samples, unsigned count, int64_t pts) {}
-    void on_audio_pause(int64_t pts) {}
-    void on_audio_resume(int64_t pts) {}
-    void on_audio_flush(int64_t pts) {}
-    void on_audio_drain() {}
+    void on_audio_play(const void* samples, unsigned count, int64_t pts)
+    {
+        std::cout << "Audio Play (" << count << ") : " << pts << "\n";
+    }
+
+    void on_audio_pause(int64_t pts)
+    {
+        std::cout << "Audio Pause : " << pts << "\n";
+    }
+
+    void on_audio_resume(int64_t pts)
+    {
+        std::cout << "Audio Resume : " << pts << "\n";
+    }
+
+    void on_audio_flush(int64_t pts)
+    {
+        std::cout << "Audio Flush : " << pts << "\n";
+    }
+
+    void on_audio_drain()
+    {
+        std::cout << "Audio Drain\n";
+    }
 
 
     image_ptr process()
@@ -180,7 +200,7 @@ inline void vlc_on_audio_resume(void* what, int64_t pts)
     reinterpret_cast<video*>(what)->on_audio_resume(pts);
 }
 
-inline void vlc_on_audio_flush(void* what, int64_t pts);
+inline void vlc_on_audio_flush(void* what, int64_t pts)
 {
     reinterpret_cast<video*>(what)->on_audio_flush(pts);
 }

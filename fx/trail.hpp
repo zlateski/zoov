@@ -7,34 +7,19 @@ namespace zoov {
 
 class EFFECT(trail, STATIC(), image_ptr, double )
 {
-private:
-    image_ptr image_   ;
-
 public:
-    trail()
-        : image_(cvCreateImage( cvSize(800, 600), IPL_DEPTH_8U, 4 ))
-    { }
-
-    ~trail()
-    {
-        cvReleaseImage(&image_);
-    }
 
     void init()
     { }
 
     image_ptr process(image_ptr im, double a1 )
     {
-        if ( im->nChannels != image_->nChannels )
-        {
-            cvReleaseImage(&image_);
-            image_ = cvCreateImage( cvSize(800, 600), IPL_DEPTH_8U, im->nChannels );
-        }
+        image_ptr r = image_pool::get(im);
 
-        cvAddWeighted( image_, a1, im, static_cast<double>(1)-a1,
-                       static_cast<double>(0), image_ );
+        cvAddWeighted( r.get(), a1, im.get(), static_cast<double>(1)-a1,
+                       static_cast<double>(0), r.get() );
 
-        return image_;
+        return r;
     }
 
 }; // class canny

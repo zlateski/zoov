@@ -3,6 +3,7 @@
 
 #include <exception>
 #include <string>
+#include <zi/zpp/stringify.hpp>
 
 namespace zoov {
 
@@ -16,6 +17,10 @@ public:
         : message_(m)
     { }
 
+    scheme_exception( const std::string& m, const char* fname, const char* line )
+        : message_(m + "\n    in " + fname + ": " + line)
+    { }
+
     virtual ~scheme_exception() throw()
     { }
 
@@ -26,13 +31,24 @@ public:
 
 };
 
-void assure(bool what, const std::string& m)
+void assure(bool what, const std::string& m = "")
 {
     if (!what)
     {
         throw scheme_exception(m);
     }
 }
+
+#define ASSURE(what)                                                    \
+    if ( !(what) )                                                      \
+    {                                                                   \
+        std::istringstream ss;                                          \
+        ss << ZI_ZPP_STRINGIFY_HPP(what);                               \
+        ss << "\n    in " << __FILE__ << ": " << __LINE__;              \
+        throw ::zoov::scheme_exception(m);                              \
+    }                                                                   \
+    static_cast<void>(0)
+
 
 } // namespace zoov
 

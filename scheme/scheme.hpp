@@ -234,7 +234,7 @@ public:
 
 public:
     scheme()
-        : env_(boost::make_shared<env_t>())
+        : env_(new env_t)
     {
         env_->set("#t", cell_t::make_boolean(true));
 
