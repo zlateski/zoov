@@ -1,3 +1,13 @@
 (define (zero? x) (eq? x 0))
 (define (sub1 x) (- x 1))
 (define (add1 x) (+ x 1))
+
+(define (list-append x y)
+  (if (nil? x)
+      y
+      (cons (car x) (list-append (cdr x) y))))
+
+(define (list-length l)
+  (if (pair? l)
+      (+ 1 (list-length (cdr l)))
+      0))

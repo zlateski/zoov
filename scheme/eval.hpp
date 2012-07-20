@@ -238,7 +238,7 @@ inline cell_ptr evif(cell_ptr exp, env_ptr e)
 inline cell_ptr eval(cell_ptr exp, env_ptr e)
 {
 
-    //std::cout << "Eval : " << exp << "\n";
+    std::cout << "Eval : " << exp << "\n";
 
     if ( exp->is_number() || exp->is_string() ||
          exp->is_boolean() || exp->is_promise() ||
