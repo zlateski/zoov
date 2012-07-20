@@ -1,0 +1,1 @@
+(trail (mask $1 (canny (smooth (grayscale $2) 15 15) 0.1 0.7 7)) 0.9 )

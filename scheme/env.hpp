@@ -15,14 +15,22 @@
 #include <zi/logging.hpp>
 
 #include "cell.hpp"
+#include "detail/counter.hpp"
 
 namespace zoov {
+
+
+//COUNTER(nenv);
+
+//std::atomic<int> nenv ;
 
 static int nenv  = 0;
 static int nrenv = 0;
 static int cps   = 0;
 
 static int rcopy  = 0;
+
+
 
 
 class env_t: public boost::enable_shared_from_this<env_t>
@@ -44,7 +52,7 @@ private:
 
         void collect(cell_ptr c)
         {
-            ZiLOG_INFO() << "Garbage collector of Env #" << root_->env_id_ << " running\n";
+            //std::cout << "Garbage collector of Env #" << root_->env_id_ << " running\n";
 
             ++iter_;
 
@@ -80,7 +88,7 @@ private:
 
         void register_env(env_ptr e)
         {
-            ZiLOG_INFO() << "Registered env [ " << envs_.size() << " envs]\n";
+            //std::cout << "Registered env [ " << envs_.size() << " envs]\n";
             envs_.push_back(e);
         }
 
@@ -157,8 +165,8 @@ public:
         , env_id_(nenv++)
     {
         ++nrenv;
-        ZiLOG_INFO() << "---> Created Root Env #" << env_id_ << "\n";
-        ZiLOG_INFO() << "---> Nenv: " << nenv << ' ' << nrenv << "\n";
+        //std::cout << "---> Created Root Env #" << env_id_ << "\n";
+        //std::cout << "---> Nenv: " << static_cast<int>(nenv) << ' ' << nrenv << "\n";
     }
 
     explicit env_t(env_ptr p)
@@ -170,8 +178,8 @@ public:
         , root_(0)
         , env_id_(nenv++)
     {
-        ZiLOG_INFO() << "---> Created Env #" << env_id_ << "\n";
-        ZiLOG_INFO() << "---> Nenv: " << nenv << ' ' << nrenv << "\n";
+        //std::cout << "---> Created Env #" << env_id_ << "\n";
+        //std::cout << "---> Nenv: " << nenv << ' ' << nrenv << "\n";
     }
 
     ~env_t()
@@ -180,41 +188,31 @@ public:
         if ( root_ )
         {
             --nrenv;
-            ZiLOG_INFO() << "---> Erased Root Env #" << env_id_ << "\n";
+            //std::cout << "---> Erased Root Env #" << env_id_ << "\n";
         }
         else
         {
-            ZiLOG_INFO() << "---> Erased Env #" << env_id_ << "\n";
+            //std::cout << "---> Erased Env #" << env_id_ << "\n";
         }
 
-        ZiLOG_INFO() << "---> Nenv: " << nenv << ' ' << nrenv << "\n";
+        //std::cout << "---> Nenv: " << nenv << ' ' << nrenv << "\n";
 
         if ( root_ )
         {
-            gc_->collect_all();//clear();
+            gc_->collect_all();
         }
 
+    }
+
+    int env_id() const
+    {
+        return env_id_;
     }
 
     void clear()
     {
         map_.clear();
         parent_.reset();
-        // map_t m;
-        // m.swap(map_);
-
-        // FOR_EACH( it, m )
-        // {
-        //     //clear(it->second);
-        // }
-
-        // env_ptr x;
-        // x.swap(parent_);
-
-        // if ( x )
-        // {
-        //     x->clear();
-        // }
     }
 
     void erase_all()
@@ -316,7 +314,7 @@ public:
     {
         FOR_EACH( it, map_ )
         {
-            ZiLOG_INFO() << it->first << '\n' << '\t'
+            std::cout << it->first << '\n' << '\t'
                       << it->second << '\n';
         }
     }
@@ -381,7 +379,7 @@ private:
         if ( c && c->copy_ )
         {
             rcopy--;
-            ZiLOG_INFO() << "RCP: " << rcopy << '\n';
+            //std::cout << "RCP: " << rcopy << '\n';
 
             cell_ptr cp;
             cp.swap(c->copy_);
@@ -401,7 +399,7 @@ private:
         if ( copy_ )
         {
             rcopy--;
-            ZiLOG_INFO() << "RCP: " << rcopy << '\n';
+            //std::cout << "RCP: " << rcopy << '\n';
 
             env_ptr cp;
             cp.swap(copy_);
@@ -427,7 +425,7 @@ private:
         }
 
         rcopy += 2;
-        ZiLOG_INFO() << "RCP: " << rcopy << '\n';
+        //std::cout << "RCP: " << rcopy << '\n';
 
         cell_t* c = new cell_t(o->type_);
         c->copy_    = cell_ptr(c);
@@ -465,7 +463,7 @@ private:
         }
 
         rcopy += 2;
-        ZiLOG_INFO() << "RCP: " << rcopy << '\n';
+        //std::cout << "RCP: " << rcopy << '\n';
 
         env_t* e = parent_ ? new env_t(parent_->copy()) : new env_t;
         copy_        = env_ptr(e);

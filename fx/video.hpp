@@ -4,6 +4,7 @@
 #include "fx.hpp"
 
 #include <zi/concurrency.hpp>
+#include <zi/time.hpp>
 
 #include <vlc/vlc.h>
 
@@ -12,6 +13,8 @@
 #include <cstddef>
 #include <string>
 #include <iostream>
+
+#include "av/audio.hpp"
 
 namespace zoov {
 
@@ -26,6 +29,9 @@ inline void  vlc_on_audio_pause(void* what, int64_t pts);
 inline void  vlc_on_audio_resume(void* what, int64_t pts);
 inline void  vlc_on_audio_flush(void* what, int64_t pts);
 inline void  vlc_on_audio_drain(void* what);
+
+inline int   vlc_on_audio_setup(void **data, char *format, unsigned *rate, unsigned *channels);
+inline void  vlc_on_audio_cleanup(void *data);
 
 } // namespace detail
 
@@ -59,28 +65,40 @@ public:
         vlc_media_ = libvlc_media_new_path(vlc_instance_, filename.c_str());
         vlc_mp_    = libvlc_media_player_new_from_media(vlc_media_);
 
+        libvlc_audio_set_format_callbacks( vlc_mp_,
+                                           detail::vlc_on_audio_setup,
+                                           detail::vlc_on_audio_cleanup );
+
         libvlc_video_set_format(vlc_mp_, "RV32", width, height, width*4);
         libvlc_media_release(vlc_media_);
 
         libvlc_video_set_callbacks(vlc_mp_, detail::vlc_on_lock,
                                    detail::vlc_on_unlock, detail::vlc_on_display, this);
 
-        // libvlc_audio_set_callbacks(vlc_mp_,
-        //                            detail::vlc_on_audio_play,
-        //                            detail::vlc_on_audio_pause, detail::vlc_on_audio_resume,
-        //                            detail::vlc_on_audio_flush, detail::vlc_on_audio_drain,
-        //                            this);
+        libvlc_audio_set_callbacks(vlc_mp_,
+                                   detail::vlc_on_audio_play,
+                                   detail::vlc_on_audio_pause, detail::vlc_on_audio_resume,
+                                   detail::vlc_on_audio_flush, detail::vlc_on_audio_drain,
+                                   this);
+
+        //mixer.add_audio(this);
 
         libvlc_media_player_play(vlc_mp_);
 
         libvlc_audio_output_t* outs = libvlc_audio_output_list_get(vlc_instance_);
+
         //libvlc_audio_output_t* outs = outsl;
 
-        // while (outs)
-        // {
-        //     std::cout << outs->psz_name << ": " << outs->psz_description << "\n";
-        //     outs = outs->p_next;
-        // }
+        std::cout << "AUDIO:\n";
+
+        while (outs)
+        {
+            std::cout << outs->psz_name << ": " << outs->psz_description << "\n";
+
+            outs = outs->p_next;
+        }
+
+        std::cout << "//\n";
 
         libvlc_audio_output_list_release(outs);
     }
@@ -99,6 +117,8 @@ public:
 
     ~video()
     {
+        //mixer.remove_audio(this);
+
         std::cout << "Erased video effect\n";
 
         libvlc_media_player_stop(vlc_mp_);
@@ -125,7 +145,13 @@ public:
 
     void on_audio_play(const void* samples, unsigned count, int64_t pts)
     {
-        std::cout << "Audio Play (" << count << ") : " << pts << "\n";
+        //mixer.add_samples(this, samples, count);
+        std::cout << "Audio Play (" << count << ") : " << pts << ' ' << libvlc_clock() << "\n";
+        const uint16_t* p = reinterpret_cast<const uint16_t*>(samples);
+        //std::cout << p[0] << "\n";
+        //std::cout << p[1] << "\n";
+        //std::cout << p[2] << "\n";
+
     }
 
     void on_audio_pause(int64_t pts)
@@ -210,9 +236,22 @@ inline void vlc_on_audio_drain(void* what)
     reinterpret_cast<video*>(what)->on_audio_drain();
 }
 
+inline int  vlc_on_audio_setup(void **data, char *format, unsigned *rate, unsigned *channels)
+{
+    std::cout << "Format: " << format << "\nRate: " << *rate << "\nChann: " << *channels << "\n";
+    return 1;
+}
+
+inline void vlc_on_audio_cleanup(void *data)
+{
+}
+
+
 
 
 } // namespace detail
+
+ALIAS(vid, video);
 
 } // namespace zoov
 

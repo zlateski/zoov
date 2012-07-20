@@ -38,6 +38,24 @@
 
 USE_ZiLOGGING( STDOUT );
 
+class sdl_t
+{
+    sdl_t()
+    {
+        if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO) < 0 )
+        {
+            exit(1);
+        }
+    }
+
+    ~sdl_t()
+    {
+        SDL_Quit();
+    }
+};
+
+//sdl_t& sdl = zi::singleton<sdl_t>::instance();
+
 class some_effect: public zoov::effect<zoov::static_params<std::string, int>>
 {
 public:
@@ -194,8 +212,18 @@ int main(int argc, char **argv)
 
     int keypress = 0;
 
+    if (SDL_Init(SDL_INIT_EVERYTHING) < 0)
+    {
+        exit(1);
+    }
 
-    if (SDL_Init(SDL_INIT_VIDEO) < 0 ) return 1;
+    std::cout << "SDL Initialized\n";
+
+    std::cout << "Try init mixer\n";
+
+    zoov::mixer.init();
+
+    std::cout << "Try init mixer - DONE\n";
 
     if (!(screen = SDL_SetVideoMode(800, 600, 32, SDL_HWSURFACE)))
     {
@@ -233,7 +261,7 @@ int main(int argc, char **argv)
                         zoov::cell_ptr l = zoov::scheme::evaluate(c);
                         zoov::scheme::env()->run_gc(c);
                         to_run = l->is_pair() && l->car()->is_effect();
-                        std::cout << l << "\n";
+                        std::cout << " = " << l << "\n";
                     }
 
 
@@ -309,7 +337,7 @@ int main(int argc, char **argv)
             line = "";
         }
 
-        std::cout << line << "\n";
+        //std::cout << line << "\n";
     }
 
 }

@@ -9,11 +9,7 @@
 #include <zi/utility/singleton.hpp>
 #include <zi/utility/non_copyable.hpp>
 
-
-
 namespace zoov {
-
-
 
 namespace detail {
 
@@ -218,14 +214,6 @@ struct make_locker_indices<C<>>
     typedef locker_indices<> type;
 };
 
-// template<template<typename...> class C>
-// struct make_locker_indices<C<>>
-// {
-//     typedef typename locker_indices<> type;
-// };
-
-
-
 } // namespace detail
 
 template< typename... > struct static_params {};
@@ -295,28 +283,33 @@ public:
 #define STATIC(...)  zoov::static_params< __VA_ARGS__ >
 #define DYNAMIC(...) zoov::dynamic_params< __VA_ARGS__ >
 
-#define EFFECT(name,stat,...)                                           \
-    name;                                                               \
-                                                                        \
-    struct _____ ## name ## _register_____                              \
+#define ALIAS(name,orig)                        \
+                                                \
+    struct _____ ## name ## _ ## orig ## _register_____                 \
     {                                                                   \
-        _____ ## name ## _register_____()                               \
+        _____ ## name ## _ ## orig ## _register_____()                  \
         {                                                               \
-            zoov::register_fx<name> x(#name);                           \
+            zoov::register_fx<orig> x(#name);                           \
         }                                                               \
     };                                                                  \
                                                                         \
     namespace {                                                         \
-        const _____ ## name ## _register_____ &                         \
-        _____ ## name ## _register_instance_____ =                      \
-            zi::singleton<_____ ## name ## _register_____>              \
+        const _____ ## name ## _ ## orig ## _register_____ &            \
+        _____ ## name ## _ ## orig ## _register_instance_____ =         \
+            zi::singleton<_____ ## name ## _ ## orig ## _register_____> \
             ::instance();                                               \
             }                                                           \
                                                                         \
-    void _____use_ ## name ## _register_instance_____()                 \
+    void _____use_ ## name ## _ ## orig ## _register_instance_____()    \
     {                                                                   \
-        static_cast<void>(_____ ## name ## _register_instance_____);    \
-    }                                                                   \
+        static_cast<void>(_____ ## name ## _ ## orig ## _register_instance_____); \
+    }
+
+
+#define EFFECT(name,stat,...)                                           \
+    name;                                                               \
+                                                                        \
+    ALIAS(name, name)                                                   \
                                                                         \
     class name: public zoov::effect<stat,zoov::dynamic_params<__VA_ARGS__>>
 

@@ -565,7 +565,14 @@ operator<< (std::basic_ostream<CharT,Traits>& os, cell_ptr c )
         break;
 
     case cell_t::number:
-        os << c->get_number();
+        if ( c->is_integral() )
+        {
+            os << c->get_integral();
+        }
+        else
+        {
+            os << c->get_number();
+        }
         break;
 
     case cell_t::quote:

@@ -1,0 +1,3 @@
+(define (zero? x) (eq? x 0))
+(define (sub1 x) (- x 1))
+(define (add1 x) (+ x 1))

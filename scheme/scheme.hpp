@@ -5,6 +5,7 @@
 #include "env.hpp"
 #include "eval.hpp"
 #include "parse.hpp"
+#include "detail/file.hpp"
 
 #include <zi/utility/singleton.hpp>
 

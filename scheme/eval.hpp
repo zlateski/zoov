@@ -176,6 +176,8 @@ inline cell_ptr evlist(cell_ptr l, env_ptr e)
 
 inline cell_ptr evcond(cell_ptr exp, env_ptr e)
 {
+    //std::cout << "Evcond: " << exp << "\n";
+
     if ( exp->is_nil() )
     {
         return exp;
@@ -185,16 +187,25 @@ inline cell_ptr evcond(cell_ptr exp, env_ptr e)
     assure( exp->car()->is_pair(), "Bad case cond format");
 
     bool else_case = exp->caar()->is_symbol() && exp->caar()->get_symbol() == "else";
-    cell_ptr r;
 
-    if ( !else_case )
+    if ( else_case )
     {
-        r = eval(exp->caar(), e);
+        //std::cout << "Else: " << exp->cdar() << '\n';
+        exp = exp->cdar();
+        return evalall(exp, e);
     }
 
-    if ( else_case || r->is_true() )
+    cell_ptr r;
+    r = eval(exp->caar(), e);
+
+    //std::cout << "R: " << r << "\n";
+
+    if ( r->is_true() )
     {
         exp = exp->cdar();
+
+        //std::cout << "It's true: " << exp << "\n";
+
         if (exp->is_nil())
         {
             return r;
@@ -297,6 +308,31 @@ inline cell_ptr eval(cell_ptr exp, env_ptr e)
             return exp->cadr();
         }
 
+        if ( s == "load" )
+        {
+            exp = exp->cdr();
+            while ( !exp->is_nil() )
+            {
+                std::string f = exp->car()->get_string();
+                if ( !detail::file_exists(f) )
+                {
+                    return cell_t::make_boolean(false);
+                }
+
+                std::string cnt = detail::file_get_contents(f);
+                std::list<std::string> cntl = tokenize(cnt);
+
+                while ( cntl.size() )
+                {
+                    cell_ptr c = parse(cntl);
+                    //std::cout << "File content: " << c << "\n";
+                    eval(c, e);
+                }
+                exp = exp->cdr();
+            }
+            return cell_t::make_boolean(true);
+        }
+
         if ( s == "string" )
         {
             return cell_t::make_string(exp->cadr()->get_symbol());
@@ -376,7 +412,7 @@ inline cell_ptr eval(cell_ptr exp, env_ptr e)
             exp->set_cdr(exp->cdr()->cdr());
         }
 
-        std::cout << "Created: " << f->get_creator_name() << "\n";
+        //std::cout << "Created: " << f->get_creator_name() << "\n";
         return exp;
     }
 
