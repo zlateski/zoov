@@ -20,6 +20,13 @@ class fx;
 typedef boost::shared_ptr<fx> fx_ptr;
 
 
+static int ncels = 0;
+
+void printncels()
+{
+    std::cout << " [NENVS: " << ncels << "]\n";
+}
+
 double round(double number)
 {
     return number < 0.0 ? std::ceil(number - 0.5) : std::floor(number + 0.5);
@@ -47,23 +54,25 @@ public:
         image,
         string,
         promise,
-        creator
+        creator,
+        vector
     };
 
 private:
     typedef cell_t this_t;
 
 private:
-    int           type_   ;
-    bool          bool_   ;
-    double        number_ ;
-    std::string   string_ ;
-    cell_ptr_pair pair_   ;
-    env_ptr       env_    ;
-    builtin_t     builtin_;
-    fx_ptr        effect_ ;
-    cell_ptr      copy_   ;
-    std::size_t   visited_;
+    int                   type_   ;
+    bool                  bool_   ;
+    double                number_ ;
+    std::string           string_ ;
+    cell_ptr_pair         pair_   ;
+    env_ptr               env_    ;
+    builtin_t             builtin_;
+    fx_ptr                effect_ ;
+    cell_ptr              copy_   ;
+    std::size_t           visited_;
+    //std::vector<cell_ptr> vector_ ;
 
     friend class env_t;
     //template <typename> friend class garbage_collector_t;
@@ -98,7 +107,9 @@ public:
         , effect_()
         , copy_()
         , visited_(0)
-    { }
+    {
+        ++ncels;
+    }
 
     cell_t()
         : type_(nil)
@@ -111,7 +122,9 @@ public:
         , effect_()
         , copy_()
         , visited_(0)
-    { }
+    {
+        ++ncels;
+    }
 
     ~cell_t()
     {
@@ -119,6 +132,7 @@ public:
         {
             std::cout << "Erased: " << get_effect_name() << '\n';
         }
+        --ncels;
     }
 
 public:

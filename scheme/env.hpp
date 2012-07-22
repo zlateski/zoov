@@ -24,11 +24,28 @@ namespace zoov {
 
 //std::atomic<int> nenv ;
 
-static int nenv  = 0;
-static int nrenv = 0;
-static int cps   = 0;
+struct just_int
+{
+    int v;
+    just_int()
+        : v(0)
+    { }
+};
 
-static int rcopy  = 0;
+namespace {
+just_int& nenv = zi::singleton<just_int>::instance();
+}
+
+inline void printnenv()
+{
+    std::cout << " [NCELLS: " << nenv.v << "]\n";
+}
+
+// static int nenv  = 0;
+// static int nrenv = 0;
+// static int cps   = 0;
+
+// static int rcopy  = 0;
 
 
 
@@ -162,9 +179,9 @@ public:
         , copy_()
         , gc_(new garbage_collector_t(this))
         , root_(1)
-        , env_id_(nenv++)
+        , env_id_(nenv.v++)
     {
-        ++nrenv;
+        //++nrenv;
         //std::cout << "---> Created Root Env #" << env_id_ << "\n";
         //std::cout << "---> Nenv: " << static_cast<int>(nenv) << ' ' << nrenv << "\n";
     }
@@ -176,7 +193,7 @@ public:
         , copy_()
         , gc_(p->gc_)
         , root_(0)
-        , env_id_(nenv++)
+        , env_id_(nenv.v++)
     {
         //std::cout << "---> Created Env #" << env_id_ << "\n";
         //std::cout << "---> Nenv: " << nenv << ' ' << nrenv << "\n";
@@ -184,10 +201,10 @@ public:
 
     ~env_t()
     {
-        --nenv;
+        --nenv.v;
         if ( root_ )
         {
-            --nrenv;
+            //--nrenv;
             //std::cout << "---> Erased Root Env #" << env_id_ << "\n";
         }
         else
@@ -200,6 +217,7 @@ public:
         if ( root_ )
         {
             gc_->collect_all();
+            delete gc_;
         }
 
     }
@@ -252,10 +270,23 @@ public:
             assure(!vals->is_nil());
             assure(vars->is_pair());
             assure(vals->is_pair());
-            assure(vars->car()->is_symbol());
 
-            add(vars->car()->get_symbol(), vals->car());
-            bind(vars->cdr(), vals->cdr());
+            if ( vars->car()->is_pair() )
+            {
+                assure(vars->car()->car()->is_symbol());
+                assure(vars->car()->car()->get_symbol() == "delayed");
+                assure(vars->car()->cdr()->car()->is_symbol());
+                assure(vars->car()->cdr()->cdr()->is_nil());
+                add(vars->car()->cdr()->car()->get_symbol(),
+                    cell_t::make_promise(vals->car(), shared_from_this()));
+                bind(vars->cdr(), vals->cdr());
+            }
+            else
+            {
+                assure(vars->car()->is_symbol());
+                add(vars->car()->get_symbol(), vals->car());
+                bind(vars->cdr(), vals->cdr());
+            }
         }
     }
 
@@ -302,6 +333,11 @@ public:
     void set(const std::string& name, const cell_ptr& cell)
     {
         map_[name] = cell;
+    }
+
+    void erase(const std::string& name)
+    {
+        map_.erase(name);
     }
 
     void add(const std::string& name, const cell_ptr& cell)
@@ -378,7 +414,7 @@ private:
     {
         if ( c && c->copy_ )
         {
-            rcopy--;
+            //rcopy--;
             //std::cout << "RCP: " << rcopy << '\n';
 
             cell_ptr cp;
@@ -398,7 +434,7 @@ private:
     {
         if ( copy_ )
         {
-            rcopy--;
+            //rcopy--;
             //std::cout << "RCP: " << rcopy << '\n';
 
             env_ptr cp;
@@ -424,7 +460,7 @@ private:
             return o->copy_;
         }
 
-        rcopy += 2;
+        //rcopy += 2;
         //std::cout << "RCP: " << rcopy << '\n';
 
         cell_t* c = new cell_t(o->type_);
@@ -462,7 +498,7 @@ private:
             return copy_;
         }
 
-        rcopy += 2;
+        //rcopy += 2;
         //std::cout << "RCP: " << rcopy << '\n';
 
         env_t* e = parent_ ? new env_t(parent_->copy()) : new env_t;

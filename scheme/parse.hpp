@@ -42,7 +42,8 @@ inline std::list<std::string> tokenize(const std::string & str)
         else
         {
             const char* t = s;
-            while (*t && *t != ' ' && *t != '(' && *t != ')')
+            while (*t && *t != ' ' && *t != '\n' && *t != '\r' &&
+                   *t != '\t' && *t != '(' && *t != ')')
             {
                 ++t;
             }

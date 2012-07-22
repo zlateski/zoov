@@ -9,11 +9,13 @@
 
 #include <zi/utility/singleton.hpp>
 
+#include "detail/dlfcn.hpp"
+
 namespace zoov {
 
 struct get_carr
 {
-    cell_ptr operator()(cell_ptr args) const
+    cell_ptr operator()(cell_ptr args, env_ptr) const
     {
         return args->car()->car();
     }
@@ -25,7 +27,14 @@ private:
     env_ptr env_;
 
 private:
-    static cell_ptr add(cell_ptr args)
+    static cell_ptr rand_fn(cell_ptr args, env_ptr)
+    {
+        assure(args->cdr()->is_nil(), "nil? needs only one arg");
+        int n = args->car()->get_integral();
+        return cell_t::make_number(std::rand() % n);
+    }
+
+    static cell_ptr add(cell_ptr args, env_ptr)
     {
         double d = args->car()->get_number();
         args = args->cdr();
@@ -38,40 +47,40 @@ private:
         return cell_t::make_number(d);
     }
 
-    static cell_ptr is_nil(cell_ptr args)
+    static cell_ptr is_nil(cell_ptr args, env_ptr)
     {
         //std::cout << args << "\n";
         assure(args->cdr()->is_nil(), "nil? needs only one arg");
         return cell_t::make_boolean(args->car()->is_nil());
     }
 
-    static cell_ptr get_car(cell_ptr args)
+    static cell_ptr get_car(cell_ptr args, env_ptr)
     {
         return args->car()->car();
     }
 
-    static cell_ptr make_list(cell_ptr args)
+    static cell_ptr make_list(cell_ptr args, env_ptr)
     {
         return args;
     }
 
-    static cell_ptr is_list(cell_ptr args)
+    static cell_ptr is_list(cell_ptr args, env_ptr)
     {
         return cell_t::make_boolean(args->car()->is_pair());
     }
 
-    static cell_ptr print_env(cell_ptr args)
+    static cell_ptr print_env(cell_ptr args, env_ptr)
     {
         scheme::env()->print();
         return cell_t::make_undefined();
     }
 
-    static cell_ptr get_cdr(cell_ptr args)
+    static cell_ptr get_cdr(cell_ptr args, env_ptr)
     {
         return args->car()->cdr();
     }
 
-    static cell_ptr subtract(cell_ptr args)
+    static cell_ptr subtract(cell_ptr args, env_ptr)
     {
         double d = args->car()->get_number();
         args = args->cdr();
@@ -84,7 +93,7 @@ private:
         return cell_t::make_number(d);
     }
 
-    static cell_ptr is_gt(cell_ptr args)
+    static cell_ptr is_gt(cell_ptr args, env_ptr)
     {
         double a = args->car()->get_number();
         args = args->cdr();
@@ -92,7 +101,7 @@ private:
         return cell_t::make_boolean(a>b);
     }
 
-    static cell_ptr is_gte(cell_ptr args)
+    static cell_ptr is_gte(cell_ptr args, env_ptr)
     {
         double a = args->car()->get_number();
         args = args->cdr();
@@ -100,7 +109,7 @@ private:
         return cell_t::make_boolean(a>=b);
     }
 
-    static cell_ptr is_lt(cell_ptr args)
+    static cell_ptr is_lt(cell_ptr args, env_ptr)
     {
         double a = args->car()->get_number();
         args = args->cdr();
@@ -108,7 +117,7 @@ private:
         return cell_t::make_boolean(a<b);
     }
 
-    static cell_ptr is_lte(cell_ptr args)
+    static cell_ptr is_lte(cell_ptr args, env_ptr)
     {
         double a = args->car()->get_number();
         args = args->cdr();
@@ -116,7 +125,7 @@ private:
         return cell_t::make_boolean(a<=b);
     }
 
-    static cell_ptr multiply(cell_ptr args)
+    static cell_ptr multiply(cell_ptr args, env_ptr)
     {
         double d = args->car()->get_number();
         args = args->cdr();
@@ -129,7 +138,7 @@ private:
         return cell_t::make_number(d);
     }
 
-    static cell_ptr divide(cell_ptr args)
+    static cell_ptr divide(cell_ptr args, env_ptr)
     {
         double d = args->car()->get_number();
         args = args->cdr();
@@ -142,7 +151,7 @@ private:
         return cell_t::make_number(d);
     }
 
-    static cell_ptr int_divide(cell_ptr args)
+    static cell_ptr int_divide(cell_ptr args, env_ptr)
     {
         int d = args->car()->get_int();
         args = args->cdr();
@@ -155,7 +164,7 @@ private:
         return cell_t::make_number(d);
     }
 
-    static cell_ptr int_mod(cell_ptr args)
+    static cell_ptr int_mod(cell_ptr args, env_ptr)
     {
         int d = args->car()->get_int();
         args = args->cdr();
@@ -168,7 +177,7 @@ private:
         return cell_t::make_number(d);
     }
 
-    static cell_ptr if_fn(cell_ptr args)
+    static cell_ptr if_fn(cell_ptr args, env_ptr)
     {
         assure(args->cddr()->is_nil(), "Too many arguments");
         cell_ptr a = args->car();
@@ -192,7 +201,7 @@ private:
         return cell_t::make_boolean(false);
     }
 
-    static cell_ptr concat(cell_ptr args)
+    static cell_ptr concat(cell_ptr args, env_ptr)
     {
         std::string d = args->car()->get_string();
         args = args->cdr();
@@ -205,14 +214,14 @@ private:
         return cell_t::make_string(d);
     }
 
-    static cell_ptr make_cons(cell_ptr args)
+    static cell_ptr make_cons(cell_ptr args, env_ptr)
     {
         cell_ptr r = cell_t::make_pair(args->car(), args->cadr());
         assure(args->cddr()->is_nil(), "Cons needs two args");
         return r;
     }
 
-    static cell_ptr print_it(cell_ptr args)
+    static cell_ptr print_it(cell_ptr args, env_ptr)
     {
         while ( !args->is_nil() )
         {
@@ -222,10 +231,16 @@ private:
         return cell_t::make_undefined();
     }
 
+
 public:
     static void register_builtin(const std::string& s, const builtin_t& f)
     {
         scheme::env()->set(s, cell_t::make_builtin(f));
+    }
+
+    static void unregister_builtin(const std::string& s)
+    {
+        scheme::env()->erase(s);
     }
 
     static void register_effect(const std::string& s, const builtin_t& f)
@@ -238,7 +253,6 @@ public:
         : env_(new env_t)
     {
         env_->set("#t", cell_t::make_boolean(true));
-
         env_->set("#t", cell_t::make_boolean(true));
         env_->set("#f", cell_t::make_boolean(false));
         env_->set("nil?", cell_t::make_builtin(&scheme::is_nil));
@@ -263,6 +277,7 @@ public:
         env_->set("concat", cell_t::make_builtin(&scheme::concat));
         env_->set("print", cell_t::make_builtin(&scheme::print_it));
         env_->set("printenv", cell_t::make_builtin(&scheme::print_env));
+        env_->set("rand", cell_t::make_builtin(&scheme::rand_fn));
     }
 
     env_ptr get_env() const
@@ -308,7 +323,7 @@ struct register_fx
     {
         const std::string name;
 
-        cell_ptr operator ()(cell_ptr l) const
+        cell_ptr operator ()(cell_ptr l, env_ptr) const
         {
             fx_ptr   fxp(new Fx);
             cell_ptr args = fxp->init_fx(l->cdr());

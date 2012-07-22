@@ -8,7 +8,12 @@
 #include "fx/add.hpp"
 #include "fx/image.hpp"
 #include "fx/smooth.hpp"
+#include "fx/sobel.hpp"
+#include "fx/absdiff.hpp"
+#include "fx/polygons.hpp"
+#include "fx/threshold.hpp"
 #include "fx/grayscale.hpp"
+#include "fx/contours.hpp"
 #include "fx/video.hpp"
 #include "fx/canny.hpp"
 #include "fx/delay.hpp"
@@ -35,6 +40,36 @@
 #include <SDL/SDL_ttf.h>
 
 #include <zi/logging.hpp>
+#include <sys/resource.h>
+
+void setstacksize()
+{
+    const rlim_t kStackSize = 1024 * 1024 * 1024;   // min stack size = 16 MB
+    struct rlimit rl;
+    int result;
+
+    result = getrlimit(RLIMIT_STACK, &rl);
+
+    printf("%d\n", result);
+
+    if (result == 0)
+    {
+        printf("%ld %ld\n", rl.rlim_cur, kStackSize);
+        if (rl.rlim_cur < kStackSize)
+        {
+            rl.rlim_cur = kStackSize;
+            result = setrlimit(RLIMIT_STACK, &rl);
+            if (result != 0)
+            {
+                fprintf(stderr, "setrlimit returned result = %d\n", result);
+            }
+        }
+    }
+
+    // ...
+
+//    return 0;
+}
 
 USE_ZiLOGGING( STDOUT );
 
@@ -183,7 +218,7 @@ public:
     }
 };
 
-cell_ptr quit_function(cell_ptr args)
+cell_ptr quit_function(cell_ptr args, env_ptr)
 {
     SDL_Quit();
     scheme::env()->run_gc();
@@ -196,6 +231,7 @@ cell_ptr quit_function(cell_ptr args)
 
 int main(int argc, char **argv)
 {
+    setstacksize();
 
     zi::parse_arguments( argc, argv, true );
 
@@ -230,6 +266,8 @@ int main(int argc, char **argv)
         SDL_Quit();
         return 1;
     }
+
+    //zoov::shareds.open("libtest.so");
 
     while (1)
     {
@@ -321,6 +359,9 @@ int main(int argc, char **argv)
                     }
 
                     zoov::scheme::env()->run_gc();
+
+                    zoov::printncels();
+                    zoov::printnenv();
                     //zoov::env_garbage_collector.collect(zoov::scheme::env());
                     line = "";
                     done = true;

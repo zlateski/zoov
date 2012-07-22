@@ -22,7 +22,7 @@ struct nil_tag       {};
 struct true_tag      {};
 struct false_tag     {};
 
-typedef boost::function<cell_ptr (cell_ptr)> builtin_t;
+typedef boost::function<cell_ptr (cell_ptr, env_ptr)> builtin_t;
 
 namespace {
 

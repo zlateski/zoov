@@ -4,6 +4,7 @@
 #include "cell.hpp"
 #include "env.hpp"
 #include "detail/file.hpp"
+#include "detail/debug.hpp"
 
 #include <zi/concurrency.hpp>
 #include <zi/utility/for_each.hpp>
@@ -113,6 +114,45 @@ public:
         }
     }
 };
+
+
+namespace detail {
+
+cell_ptr eval_value(cell_ptr exp, env_ptr e)
+{
+    dout << "eval_value: " << exp << '\n';
+    return exp;
+}
+
+cell_ptr eval_symbol(cell_ptr exp, env_ptr e)
+{
+    dout << "eval_symbol: " << exp << " result: ";
+
+    try
+    {
+        cell_ptr r = e->lookup(exp->get_symbol());
+        dout << r << '\n';
+        return r;
+    }
+    catch ( scheme_exception& ecp )
+    {
+        dout << "(file function) ";
+
+        if ( detail::file_exists("./lib/" + exp->get_symbol() + ".zcm") )
+        {
+            std::string x = detail::file_get_contents("./lib/" + exp->get_symbol() + ".zcm");
+            std::list<std::string> s = tokenize(x);
+            cell_ptr c = parse(s);
+            c = cell_t::make_infile(cell_t::make_pair(c,cell_t::make_nil()), get_global_env());
+            dout << c << '\n';
+            return c;
+        }
+        dout << "not found\n";
+        throw ecp;
+    }
+}
+
+} // namespace detail
 
 inline cell_ptr evlet(cell_ptr exp, env_ptr e)
 {
@@ -238,33 +278,18 @@ inline cell_ptr evif(cell_ptr exp, env_ptr e)
 inline cell_ptr eval(cell_ptr exp, env_ptr e)
 {
 
-    std::cout << "Eval : " << exp << "\n";
+    //std::cout << "Eval : " << exp << "\n";
 
     if ( exp->is_number() || exp->is_string() ||
          exp->is_boolean() || exp->is_promise() ||
-         exp->is_image() )
+         exp->is_image() || exp->is_nil() )
     {
-        return exp;
+        return detail::eval_value(exp, e);
     }
 
     if ( exp->is_symbol() )
     {
-        try
-        {
-            return e->lookup(exp->get_symbol());
-        }
-        catch ( scheme_exception& ecp )
-        {
-            if ( detail::file_exists("./lib/" + exp->get_symbol() + ".zcm") )
-            {
-                std::string x = detail::file_get_contents("./lib/" + exp->get_symbol() + ".zcm");
-                std::list<std::string> s = tokenize(x);
-                cell_ptr c = parse(s);
-                return cell_t::make_infile
-                    (cell_t::make_pair(c,cell_t::make_nil()), get_global_env());
-            }
-            throw ecp;
-        }
+        return detail::eval_symbol(exp, e);
     }
 
     if ( exp->is_quote() )
@@ -273,7 +298,6 @@ inline cell_ptr eval(cell_ptr exp, env_ptr e)
     }
 
     assure( exp->is_pair(), "Bad expression [not a pair]" );
-    //assure( exp->car()->is_symbol(), "Bad expression [not a symbol]");
 
     if ( exp->car()->is_symbol() )
     {
@@ -402,7 +426,7 @@ inline cell_ptr eval(cell_ptr exp, env_ptr e)
     if ( f->is_creator() )
     {
         cell_ptr r = cell_t::make_pair(exp->car(),evlist(exp->cdr(),e));
-        f->get_creator()(r);
+        f->get_creator()(r,e);
 
         exp->set_car(r->car());
         //r->car()->set_env(e);
@@ -446,7 +470,7 @@ inline cell_ptr apply(cell_ptr f, cell_ptr args)
     if ( f->is_builtin() )
     {
         builtin_t t = f->get_builtin();
-        cell_ptr a = t(args);
+        cell_ptr a = t(args,get_global_env());
         return a;
     }
 

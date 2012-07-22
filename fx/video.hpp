@@ -81,7 +81,7 @@ public:
                                    detail::vlc_on_audio_flush, detail::vlc_on_audio_drain,
                                    this);
 
-        //mixer.add_audio(this);
+        mixer.add_audio(this);
 
         libvlc_media_player_play(vlc_mp_);
 
@@ -117,7 +117,7 @@ public:
 
     ~video()
     {
-        //mixer.remove_audio(this);
+        mixer.remove_audio(this);
 
         std::cout << "Erased video effect\n";
 
@@ -145,7 +145,7 @@ public:
 
     void on_audio_play(const void* samples, unsigned count, int64_t pts)
     {
-        //mixer.add_samples(this, samples, count);
+        mixer.add_samples(this, samples, count);
         std::cout << "Audio Play (" << count << ") : " << pts << ' ' << libvlc_clock() << "\n";
         const uint16_t* p = reinterpret_cast<const uint16_t*>(samples);
         //std::cout << p[0] << "\n";
@@ -245,9 +245,6 @@ inline int  vlc_on_audio_setup(void **data, char *format, unsigned *rate, unsign
 inline void vlc_on_audio_cleanup(void *data)
 {
 }
-
-
-
 
 } // namespace detail
 

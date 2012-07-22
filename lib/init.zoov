@@ -1,6 +1,11 @@
 (define (zero? x) (eq? x 0))
+(define (one? x) (eq? x 1))
 (define (sub1 x) (- x 1))
 (define (add1 x) (+ x 1))
+
+(define (not x) (if x #f #t))
+(define (odd? x) (one? (mod x 2)))
+(define (even? x) (zero? (mod x 2)))
 
 (define (list-append x y)
   (if (nil? x)
@@ -8,6 +13,79 @@
       (cons (car x) (list-append (cdr x) y))))
 
 (define (list-length l)
-  (if (pair? l)
-      (+ 1 (list-length (cdr l)))
-      0))
+  (if (nil? l)
+      0
+      (+ 1 (list-length (cdr l)))))
+
+(define (list-merge-fn x y fn)
+  (if (nil? x)
+      y
+      (if (nil? y)
+          x
+          (let ((xc (car x)) (yc (car y)))
+            (if (fn xc yc)
+                (cons xc (list-merge-fn (cdr x) y fn))
+                (cons yc (list-merge-fn x (cdr y) fn)))))))
+
+(define (list-merge x y)
+  (list-merge-fn x y <=?))
+
+(define (list-split l)
+  (define (list-split-helper p l)
+    (if (nil? l)
+        p
+        (list-split-helper (cons (cons (car l) (cdr p)) (car p)) (cdr l))))
+  (list-split-helper (cons nil nil) l))
+
+(define (list-sort l)
+  (if (nil? l)
+      l
+      (if (nil? (cdr l))
+          l
+          (let ((p (list-split l)))
+            (list-merge (list-sort (car p)) (list-sort (cdr p)))))))
+
+(define (make-seq f t)
+  (if (>? f t)
+      nil
+      (cons f (make-seq (add1 f) t))))
+
+(define (random-list l n)
+  (if (>? l 0)
+      (cons (rand n) (random-list (sub1 l) n))
+      nil))
+
+(define map
+  (lambda (proc . lists)
+    (define (map-impl pr li)
+      (if (nil? li)
+          nil
+          (let ((a (car li)) (b (cdr li)))
+            (if (nil? a)
+                (map-impl pr b)
+                (cons (pr (car a)) (map-impl pr (cons (cdr a) b)))))))
+    (map-impl proc lists)))
+
+(define map*
+  (lambda (initial proc . lists)
+    (define (map-impl pr li)
+      (if (nil? li)
+          initial
+          (let ((a (car li)) (b (cdr li)))
+            (if (nil? a)
+                (map-impl pr b)
+                (cons (pr (car a)) (map-impl pr (cons (cdr a) b)))))))
+    (map-impl proc lists)))
+
+(define (filter pred l)
+  (if (nil? l)
+      nil
+      (if (pred (car l))
+          (cons (car l) (filter pred (cdr l)))
+          (filter pred (cdr l)))))
+
+(define (remove pred l)
+  (define (p x) (not (pred x)))
+  (filter p l))
+
+(define (rgb r g b) (+ (* 255 255 b) (* 255 g) r))
